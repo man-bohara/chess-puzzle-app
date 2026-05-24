@@ -1,6 +1,7 @@
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:square_bishop/square_bishop.dart';
 import 'package:squares/squares.dart';
 
@@ -9,21 +10,29 @@ import '../data/puzzle_repository.dart';
 import '../domain/puzzle.dart';
 
 class PuzzleSolverScreen extends ConsumerWidget {
-  const PuzzleSolverScreen({required this.puzzleId, super.key});
-  final String puzzleId;
+  const PuzzleSolverScreen({required this.index, super.key});
+  final int index;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final puzzleAsync = ref.watch(puzzleByIdProvider(puzzleId));
+    final puzzleAsync = ref.watch(puzzleByIndexProvider(index));
+    final totalAsync = ref.watch(puzzleCountProvider);
+    final total = totalAsync.valueOrNull ?? 0;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Solve')),
+      appBar: AppBar(
+        title: Text(total > 0 ? 'Puzzle ${index + 1} of $total' : 'Puzzle'),
+      ),
       body: puzzleAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e')),
         data: (puzzle) {
           if (puzzle == null) return const Center(child: Text('Not found'));
-          return _PuzzleBoard(puzzle: puzzle);
+          return _PuzzleBoard(
+            puzzle: puzzle,
+            index: index,
+            isLast: total > 0 && index >= total - 1,
+          );
         },
       ),
     );
@@ -93,8 +102,14 @@ class _StatusBanner extends StatelessWidget {
 }
 
 class _PuzzleBoard extends ConsumerStatefulWidget {
-  const _PuzzleBoard({required this.puzzle});
+  const _PuzzleBoard({
+    required this.puzzle,
+    required this.index,
+    required this.isLast,
+  });
   final Puzzle puzzle;
+  final int index;
+  final bool isLast;
 
   @override
   ConsumerState<_PuzzleBoard> createState() => _PuzzleBoardState();
@@ -134,6 +149,7 @@ class _PuzzleBoardState extends ConsumerState<_PuzzleBoard> {
         puzzle.fen.split(' ')[1] == 'b' ? Squares.black : Squares.white;
     final squaresState = state.game.squaresState(orientation);
     final whiteToMove = orientation == Squares.white;
+    final solved = state.status == PuzzleStatus.solved;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(12),
@@ -238,11 +254,26 @@ class _PuzzleBoardState extends ConsumerState<_PuzzleBoard> {
             ),
           ],
           const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: () =>
-                ref.read(puzzleControllerProvider(puzzle).notifier).reset(),
-            icon: const Icon(Icons.refresh),
-            label: const Text('Reset'),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              OutlinedButton.icon(
+                onPressed: () =>
+                    ref.read(puzzleControllerProvider(puzzle).notifier).reset(),
+                icon: const Icon(Icons.refresh),
+                label: const Text('Reset'),
+              ),
+              if (solved) ...[
+                const SizedBox(width: 12),
+                FilledButton.icon(
+                  onPressed: widget.isLast
+                      ? null
+                      : () => context.go('/puzzle/${widget.index + 1}'),
+                  icon: const Icon(Icons.arrow_forward),
+                  label: Text(widget.isLast ? 'All done' : 'Next'),
+                ),
+              ],
+            ],
           ),
         ],
       ),
