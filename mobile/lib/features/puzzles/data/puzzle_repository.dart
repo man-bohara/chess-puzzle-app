@@ -18,12 +18,14 @@ Future<List<Puzzle>> _loadBundledPuzzles() async {
 
 final puzzlesProvider = FutureProvider<List<Puzzle>>((_) => _loadBundledPuzzles());
 
-final puzzleByIdProvider = FutureProvider.family<Puzzle?, String>(
-  (ref, id) async {
+final puzzleByIndexProvider = FutureProvider.family<Puzzle?, int>(
+  (ref, index) async {
     final list = await ref.watch(puzzlesProvider.future);
-    for (final p in list) {
-      if (p.id == id) return p;
-    }
-    return null;
+    if (index < 0 || index >= list.length) return null;
+    return list[index];
   },
+);
+
+final puzzleCountProvider = FutureProvider<int>(
+  (ref) async => (await ref.watch(puzzlesProvider.future)).length,
 );

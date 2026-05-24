@@ -5,6 +5,7 @@ class Puzzle {
     required this.solution,
     required this.difficulty,
     required this.themes,
+    this.caption,
   });
 
   final String id;
@@ -22,11 +23,17 @@ class Puzzle {
   /// Tags such as `fork`, `pin`, `mateIn2`.
   final List<String> themes;
 
+  /// Optional per-puzzle task line shown above the board (e.g. "Find the mate
+  /// — white to move"). If null, the solver falls back to a generated
+  /// "White/Black to move" derived from [fen].
+  final String? caption;
+
   factory Puzzle.fromJson(Map<String, dynamic> json) => Puzzle(
         id: json['id'] as String,
         fen: json['fen'] as String,
         solution: List<String>.from(json['solution'] as List),
         difficulty: (json['difficulty'] as num?) ?? 3,
         themes: List<String>.from(json['themes'] as List? ?? const []),
+        caption: json['caption'] as String?,
       );
 }
