@@ -21,7 +21,15 @@ class PuzzleSolverScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(total > 0 ? 'Puzzle ${index + 1} of $total' : 'Puzzle'),
+        backgroundColor: Colors.indigo.shade600,
+        foregroundColor: Colors.white,
+        title: Text(
+          total > 0 ? 'Puzzle ${index + 1} of $total' : 'Puzzle',
+          style: const TextStyle(
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.5,
+          ),
+        ),
       ),
       body: puzzleAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -67,8 +75,8 @@ class _StatusBanner extends StatelessWidget {
           'Wrong move — try again',
         ),
       PuzzleStatus.inProgress => (
-          Theme.of(context).colorScheme.surfaceContainerHighest,
-          Theme.of(context).colorScheme.onSurfaceVariant,
+          Colors.blue.shade50,
+          Colors.indigo.shade700,
           Icons.timeline,
           'Progress $moveIndex / $totalMoves',
         ),
@@ -148,44 +156,25 @@ class _PuzzleBoardState extends ConsumerState<_PuzzleBoard> {
     final orientation =
         puzzle.fen.split(' ')[1] == 'b' ? Squares.black : Squares.white;
     final squaresState = state.game.squaresState(orientation);
-    final whiteToMove = orientation == Squares.white;
     final solved = state.status == PuzzleStatus.solved;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(12),
       child: Column(
         children: [
-          if (puzzle.themes.isNotEmpty) ...[
+          if (puzzle.caption != null) ...[
             Text(
-              puzzle.themes.join(' · '),
+              puzzle.caption!,
+              textAlign: TextAlign.center,
               style: TextStyle(
-                color: Theme.of(context).colorScheme.primary,
-                fontWeight: FontWeight.w500,
-                letterSpacing: 0.3,
+                color: Colors.deepPurple.shade600,
+                fontWeight: FontWeight.w700,
+                fontSize: 18,
+                letterSpacing: 0.4,
               ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 10),
           ],
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 18,
-                height: 18,
-                decoration: BoxDecoration(
-                  color: whiteToMove ? Colors.white : Colors.black,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.black54, width: 1.5),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '${whiteToMove ? "White" : "Black"} to move',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
           AspectRatio(
             aspectRatio: 1,
             child: Stack(
@@ -262,6 +251,10 @@ class _PuzzleBoardState extends ConsumerState<_PuzzleBoard> {
                     ref.read(puzzleControllerProvider(puzzle).notifier).reset(),
                 icon: const Icon(Icons.refresh),
                 label: const Text('Reset'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.orange.shade800,
+                  side: BorderSide(color: Colors.orange.shade600, width: 1.5),
+                ),
               ),
               if (solved) ...[
                 const SizedBox(width: 12),
@@ -271,6 +264,9 @@ class _PuzzleBoardState extends ConsumerState<_PuzzleBoard> {
                       : () => context.go('/puzzle/${widget.index + 1}'),
                   icon: const Icon(Icons.arrow_forward),
                   label: Text(widget.isLast ? 'All done' : 'Next'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.green.shade600,
+                  ),
                 ),
               ],
             ],
