@@ -1,42 +1,29 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:convert';
+
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../domain/puzzle.dart';
 
-final firestoreProvider = Provider<FirebaseFirestore>(
-  (_) => FirebaseFirestore.instance,
-);
+final _puzzlesAsset = 'assets/puzzles.json';
 
-class PuzzleRepository {
-  PuzzleRepository(this._db);
-  final FirebaseFirestore _db;
-
-  CollectionReference<Map<String, dynamic>> get _puzzles =>
-      _db.collection('puzzles');
-
-  /// Live stream of published puzzles, newest first.
-  Stream<List<Puzzle>> watchPublished() {
-    return _puzzles
-        .where('published', isEqualTo: true)
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snap) => snap.docs.map(Puzzle.fromSnapshot).toList());
-  }
-
-  Future<Puzzle?> fetch(String id) async {
-    final doc = await _puzzles.doc(id).get();
-    return doc.exists ? Puzzle.fromSnapshot(doc) : null;
-  }
+Future<List<Puzzle>> _loadBundledPuzzles() async {
+  final raw = await rootBundle.loadString(_puzzlesAsset);
+  final list = jsonDecode(raw) as List;
+  return list
+      .cast<Map<String, dynamic>>()
+      .map(Puzzle.fromJson)
+      .toList(growable: false);
 }
 
-final puzzleRepositoryProvider = Provider<PuzzleRepository>(
-  (ref) => PuzzleRepository(ref.watch(firestoreProvider)),
-);
-
-final publishedPuzzlesProvider = StreamProvider<List<Puzzle>>(
-  (ref) => ref.watch(puzzleRepositoryProvider).watchPublished(),
-);
+final puzzlesProvider = FutureProvider<List<Puzzle>>((_) => _loadBundledPuzzles());
 
 final puzzleByIdProvider = FutureProvider.family<Puzzle?, String>(
-  (ref, id) => ref.watch(puzzleRepositoryProvider).fetch(id),
+  (ref, id) async {
+    final list = await ref.watch(puzzlesProvider.future);
+    for (final p in list) {
+      if (p.id == id) return p;
+    }
+    return null;
+  },
 );

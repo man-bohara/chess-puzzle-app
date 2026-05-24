@@ -1,5 +1,5 @@
 name: chess_puzzle_app
-description: "Chess puzzle mobile app — players solve Firebase-hosted puzzles move-by-move."
+description: "Chess puzzle mobile app — solve a bundled library of puzzles offline."
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -14,39 +14,27 @@ dependencies:
 
   # State management
   flutter_riverpod: ^2.6.1
-  riverpod_annotation: ^2.6.1
 
   # Routing
   go_router: ^14.6.1
 
-  # Firebase
-  firebase_core: ^3.8.0
-  firebase_auth: ^5.3.4
-  cloud_firestore: ^5.5.0
-
   # Chess
-  # `chess` handles move legality, FEN parsing, and game state.
-  # Pair it with a board-renderer package of your choice
-  # (e.g. flutter_chess_board, squares, wp_chessboard) — see
-  # features/puzzles/presentation/puzzle_solver_screen.dart for the integration point.
-  chess: ^0.8.0
+  # `bishop` is the engine (FEN, move legality, game state).
+  # `squares` is the board widget; it consumes bishop's SquaresState directly.
+  bishop: ^1.4.4
+  squares: ^1.2.1
+  # Bridge: extension methods on bishop.Game producing squares' SquaresState.
+  square_bishop: ^0.3.0
 
-  # Serialization
-  freezed_annotation: ^2.4.4
-  json_annotation: ^4.9.0
+  # Confetti burst on puzzle solve.
+  confetti: ^0.8.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
 
-  # Codegen
-  build_runner: ^2.4.13
-  freezed: ^2.5.7
-  json_serializable: ^6.9.0
-  riverpod_generator: ^2.6.3
-  custom_lint: ^0.7.0
-  riverpod_lint: ^2.6.3
-
 flutter:
   uses-material-design: true
+  assets:
+    - assets/puzzles.json
