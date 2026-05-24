@@ -30,6 +30,23 @@ class PuzzleSolverScreen extends ConsumerWidget {
             letterSpacing: 0.5,
           ),
         ),
+        actions: [
+          IconButton(
+            tooltip: 'About',
+            icon: const Icon(Icons.info_outline),
+            onPressed: () => showAboutDialog(
+              context: context,
+              applicationName: 'Brain Games',
+              applicationVersion: '1.0.0',
+              applicationLegalese:
+                  '© 2026 Bohara Inc. All rights reserved.',
+              children: const [
+                SizedBox(height: 12),
+                Text('Brain Games by Bohara Inc.'),
+              ],
+            ),
+          ),
+        ],
       ),
       body: puzzleAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -270,6 +287,16 @@ class _PuzzleBoardState extends ConsumerState<_PuzzleBoard> {
                 ),
               ],
             ],
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Brain Games by Bohara Inc.\n© 2026 · All rights reserved.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.grey.shade600,
+              height: 1.4,
+            ),
           ),
         ],
       ),
