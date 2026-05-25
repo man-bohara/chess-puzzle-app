@@ -29,6 +29,7 @@ dependencies:
   # Confetti burst on puzzle solve.
   confetti: ^0.8.0
   audioplayers: ^6.6.0
+  shared_preferences: ^2.5.5
 
 dev_dependencies:
   flutter_test:

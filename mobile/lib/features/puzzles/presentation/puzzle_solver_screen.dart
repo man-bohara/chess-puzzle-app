@@ -7,18 +7,32 @@ import 'package:go_router/go_router.dart';
 import 'package:square_bishop/square_bishop.dart';
 import 'package:squares/squares.dart';
 
+import '../../../core/progress/progress_store.dart';
 import '../../../core/sound/sound_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../application/puzzle_controller.dart';
 import '../data/puzzle_repository.dart';
 import '../domain/puzzle.dart';
 
-class PuzzleSolverScreen extends ConsumerWidget {
+class PuzzleSolverScreen extends ConsumerStatefulWidget {
   const PuzzleSolverScreen({required this.index, super.key});
   final int index;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PuzzleSolverScreen> createState() =>
+      _PuzzleSolverScreenState();
+}
+
+class _PuzzleSolverScreenState extends ConsumerState<PuzzleSolverScreen> {
+  @override
+  void initState() {
+    super.initState();
+    ProgressStore.setCurrentIndex(widget.index);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final index = widget.index;
     final puzzleAsync = ref.watch(puzzleByIndexProvider(index));
     final totalAsync = ref.watch(puzzleCountProvider);
     final total = totalAsync.valueOrNull ?? 0;
