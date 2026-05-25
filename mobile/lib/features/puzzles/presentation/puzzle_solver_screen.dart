@@ -8,6 +8,7 @@ import 'package:square_bishop/square_bishop.dart';
 import 'package:squares/squares.dart';
 
 import '../../../core/progress/progress_store.dart';
+import '../../../core/progress/puzzle_progress_db.dart';
 import '../../../core/sound/sound_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../application/puzzle_controller.dart';
@@ -253,6 +254,10 @@ class _PuzzleBoardState extends ConsumerState<_PuzzleBoard>
           _confetti.play();
           SoundService.instance.playSolved();
           _showPraise();
+          PuzzleProgressDb.instance.markSolved(
+            puzzle.id,
+            errors: next.errors,
+          );
         } else if (next.moveIndex > prevIndex) {
           SoundService.instance.playTick();
         }
