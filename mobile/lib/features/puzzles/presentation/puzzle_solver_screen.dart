@@ -33,16 +33,22 @@ class PuzzleSolverScreen extends ConsumerWidget {
           IconButton(
             tooltip: 'About',
             icon: const Icon(Icons.info_outline),
-            onPressed: () => showAboutDialog(
+            onPressed: () => showDialog<void>(
               context: context,
-              applicationName: 'Brain Games',
-              applicationVersion: '1.0.0',
-              applicationLegalese:
+              builder: (ctx) => AlertDialog(
+                title: const Text('Brain Games'),
+                content: const Text(
+                  'Brain Games by Bohara Inc.\n'
+                  'Version 1.0.0\n'
                   '© 2026 Bohara Inc. All rights reserved.',
-              children: const [
-                SizedBox(height: 12),
-                Text('Brain Games by Bohara Inc.'),
-              ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: const Text('Close'),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
