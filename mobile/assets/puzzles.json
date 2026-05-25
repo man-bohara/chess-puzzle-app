@@ -2,7 +2,7 @@
   {
     "id": "1",
     "caption": "Checkmate in 2 moves \u2014 white to move",
-    "fen": "7q/6rp/8/8/8/1P2B3/P1P5/1K1Q4 w - - 0 1",
+    "fen": "7k/6rp/8/8/8/1P2B3/PKP5/3Q4 w - - 0 1",
     "solution": [
       "d1d8",
       "g7g8",

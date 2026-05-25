@@ -31,6 +31,11 @@ class PuzzleSolverScreen extends ConsumerWidget {
         ),
         actions: [
           IconButton(
+            tooltip: 'Restart from Puzzle 1',
+            icon: const Icon(Icons.restart_alt),
+            onPressed: index == 0 ? null : () => context.go('/puzzle/0'),
+          ),
+          IconButton(
             tooltip: 'About',
             icon: const Icon(Icons.info_outline),
             onPressed: () => showDialog<void>(
@@ -265,9 +270,25 @@ class _PuzzleBoardState extends ConsumerState<_PuzzleBoard> {
             ),
           ],
           const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 12,
+            runSpacing: 8,
             children: [
+              OutlinedButton.icon(
+                onPressed: widget.index == 0
+                    ? null
+                    : () => context.go('/puzzle/${widget.index - 1}'),
+                icon: const Icon(Icons.arrow_back),
+                label: const Text('Previous'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppTheme.woodDeep,
+                  side: const BorderSide(
+                    color: AppTheme.woodAccent,
+                    width: 1.5,
+                  ),
+                ),
+              ),
               OutlinedButton.icon(
                 onPressed: () =>
                     ref.read(puzzleControllerProvider(puzzle).notifier).reset(),
@@ -281,8 +302,7 @@ class _PuzzleBoardState extends ConsumerState<_PuzzleBoard> {
                   ),
                 ),
               ),
-              if (solved) ...[
-                const SizedBox(width: 12),
+              if (solved)
                 FilledButton.icon(
                   onPressed: widget.isLast
                       ? null
@@ -293,7 +313,6 @@ class _PuzzleBoardState extends ConsumerState<_PuzzleBoard> {
                     backgroundColor: Colors.green.shade600,
                   ),
                 ),
-              ],
             ],
           ),
           const SizedBox(height: 24),
