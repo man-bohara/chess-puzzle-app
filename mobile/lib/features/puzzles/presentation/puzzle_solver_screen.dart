@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:square_bishop/square_bishop.dart';
 import 'package:squares/squares.dart';
 
+import '../../../core/theme/app_theme.dart';
 import '../application/puzzle_controller.dart';
 import '../data/puzzle_repository.dart';
 import '../domain/puzzle.dart';
@@ -21,8 +22,6 @@ class PuzzleSolverScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.indigo.shade600,
-        foregroundColor: Colors.white,
         title: Text(
           total > 0 ? 'Puzzle ${index + 1} of $total' : 'Puzzle',
           style: const TextStyle(
@@ -30,6 +29,23 @@ class PuzzleSolverScreen extends ConsumerWidget {
             letterSpacing: 0.5,
           ),
         ),
+        actions: [
+          IconButton(
+            tooltip: 'About',
+            icon: const Icon(Icons.info_outline),
+            onPressed: () => showAboutDialog(
+              context: context,
+              applicationName: 'Brain Games',
+              applicationVersion: '1.0.0',
+              applicationLegalese:
+                  '© 2026 Bohara Inc. All rights reserved.',
+              children: const [
+                SizedBox(height: 12),
+                Text('Brain Games by Bohara Inc.'),
+              ],
+            ),
+          ),
+        ],
       ),
       body: puzzleAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -75,8 +91,8 @@ class _StatusBanner extends StatelessWidget {
           'Wrong move — try again',
         ),
       PuzzleStatus.inProgress => (
-          Colors.blue.shade50,
-          Colors.indigo.shade700,
+          AppTheme.boardLight,
+          AppTheme.woodDeep,
           Icons.timeline,
           'Progress $moveIndex / $totalMoves',
         ),
@@ -166,8 +182,8 @@ class _PuzzleBoardState extends ConsumerState<_PuzzleBoard> {
             Text(
               puzzle.caption!,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.deepPurple.shade600,
+              style: const TextStyle(
+                color: AppTheme.woodDeep,
                 fontWeight: FontWeight.w700,
                 fontSize: 18,
                 letterSpacing: 0.4,
@@ -235,8 +251,8 @@ class _PuzzleBoardState extends ConsumerState<_PuzzleBoard> {
             Text(
               'Hint: try moving the piece on '
               '${puzzle.solution[state.moveIndex].substring(0, 2)}',
-              style: TextStyle(
-                color: Colors.amber.shade800,
+              style: const TextStyle(
+                color: AppTheme.hintAmber,
                 fontStyle: FontStyle.italic,
                 fontWeight: FontWeight.w500,
               ),
@@ -252,8 +268,11 @@ class _PuzzleBoardState extends ConsumerState<_PuzzleBoard> {
                 icon: const Icon(Icons.refresh),
                 label: const Text('Reset'),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.orange.shade800,
-                  side: BorderSide(color: Colors.orange.shade600, width: 1.5),
+                  foregroundColor: AppTheme.woodDeep,
+                  side: const BorderSide(
+                    color: AppTheme.woodAccent,
+                    width: 1.5,
+                  ),
                 ),
               ),
               if (solved) ...[
@@ -270,6 +289,16 @@ class _PuzzleBoardState extends ConsumerState<_PuzzleBoard> {
                 ),
               ],
             ],
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Brain Games by Bohara Inc.\n© 2026 · All rights reserved.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.grey.shade600,
+              height: 1.4,
+            ),
           ),
         ],
       ),
