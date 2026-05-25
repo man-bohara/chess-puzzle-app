@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -151,19 +153,77 @@ class _PuzzleBoard extends ConsumerStatefulWidget {
   ConsumerState<_PuzzleBoard> createState() => _PuzzleBoardState();
 }
 
-class _PuzzleBoardState extends ConsumerState<_PuzzleBoard> {
+const _praiseWords = <String>[
+  'Excellent!',
+  'Fabulous!',
+  'Well Done!',
+  'Keep Going!',
+  'Great!',
+  'Brilliant!',
+  'Amazing!',
+  'Superb!',
+  'Bravo!',
+  'Fantastic!',
+];
+
+class _PuzzleBoardState extends ConsumerState<_PuzzleBoard>
+    with SingleTickerProviderStateMixin {
   late final ConfettiController _confetti;
+  late final AnimationController _praise;
+  late final Animation<double> _praiseScale;
+  late final Animation<double> _praiseOpacity;
+  final _rng = Random();
+  String? _praiseWord;
 
   @override
   void initState() {
     super.initState();
     _confetti = ConfettiController(duration: const Duration(seconds: 2));
+    _praise = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    )..addStatusListener((status) {
+        if (status == AnimationStatus.completed && mounted) {
+          setState(() => _praiseWord = null);
+        }
+      });
+    _praiseScale = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween(begin: 0.4, end: 1.15)
+            .chain(CurveTween(curve: Curves.easeOutBack)),
+        weight: 30,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: 1.15, end: 1.0)
+            .chain(CurveTween(curve: Curves.easeOut)),
+        weight: 15,
+      ),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 30),
+      TweenSequenceItem(
+        tween: Tween(begin: 1.0, end: 1.15)
+            .chain(CurveTween(curve: Curves.easeIn)),
+        weight: 25,
+      ),
+    ]).animate(_praise);
+    _praiseOpacity = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 15),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 60),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 25),
+    ]).animate(_praise);
   }
 
   @override
   void dispose() {
     _confetti.dispose();
+    _praise.dispose();
     super.dispose();
+  }
+
+  void _showPraise() {
+    setState(() {
+      _praiseWord = _praiseWords[_rng.nextInt(_praiseWords.length)];
+    });
+    _praise.forward(from: 0);
   }
 
   @override
@@ -178,6 +238,7 @@ class _PuzzleBoardState extends ConsumerState<_PuzzleBoard> {
             next.status == PuzzleStatus.solved) {
           _confetti.play();
           SoundService.instance.playSolved();
+          _showPraise();
         } else if (next.moveIndex > prevIndex) {
           SoundService.instance.playTick();
         }
@@ -255,6 +316,39 @@ class _PuzzleBoardState extends ConsumerState<_PuzzleBoard> {
                     ],
                   ),
                 ),
+                if (_praiseWord != null)
+                  IgnorePointer(
+                    child: AnimatedBuilder(
+                      animation: _praise,
+                      builder: (context, _) => Opacity(
+                        opacity: _praiseOpacity.value,
+                        child: Transform.scale(
+                          scale: _praiseScale.value,
+                          child: Text(
+                            _praiseWord!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 52,
+                              fontWeight: FontWeight.w900,
+                              color: AppTheme.woodDeep,
+                              letterSpacing: 1.5,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.white,
+                                  blurRadius: 12,
+                                ),
+                                Shadow(
+                                  color: Colors.black38,
+                                  offset: Offset(2, 3),
+                                  blurRadius: 6,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
