@@ -3,24 +3,41 @@ import 'package:flutter/foundation.dart';
 
 /// Plays short UI sound effects bundled in `assets/sounds/`.
 ///
-/// Missing files are tolerated — if `wrong.mp3` or `solved.mp3` isn't shipped,
-/// `play*` becomes a no-op so the app still works.
+/// Call [init] once at app startup to preload sources so the first `play*`
+/// fires without disk-load latency. Missing files are tolerated — if a clip
+/// isn't shipped, the corresponding `play*` becomes a no-op.
 class SoundService {
   SoundService._();
   static final SoundService instance = SoundService._();
 
   final AudioPlayer _wrong = AudioPlayer()..setReleaseMode(ReleaseMode.stop);
   final AudioPlayer _solved = AudioPlayer()..setReleaseMode(ReleaseMode.stop);
+  bool _ready = false;
 
-  Future<void> playWrong() => _safePlay(_wrong, 'sounds/wrong.mp3');
-  Future<void> playSolved() => _safePlay(_solved, 'sounds/solved.mp3');
+  Future<void> init() async {
+    if (_ready) return;
+    await _safeSet(_wrong, 'sounds/wrong.mp3');
+    await _safeSet(_solved, 'sounds/solved.mp3');
+    _ready = true;
+  }
 
-  Future<void> _safePlay(AudioPlayer player, String assetPath) async {
+  Future<void> playWrong() => _safePlay(_wrong);
+  Future<void> playSolved() => _safePlay(_solved);
+
+  Future<void> _safeSet(AudioPlayer player, String assetPath) async {
     try {
-      await player.stop();
-      await player.play(AssetSource(assetPath));
+      await player.setSource(AssetSource(assetPath));
     } catch (e) {
-      if (kDebugMode) debugPrint('SoundService: $assetPath failed: $e');
+      if (kDebugMode) debugPrint('SoundService: preload $assetPath failed: $e');
+    }
+  }
+
+  Future<void> _safePlay(AudioPlayer player) async {
+    try {
+      await player.seek(Duration.zero);
+      await player.resume();
+    } catch (e) {
+      if (kDebugMode) debugPrint('SoundService: play failed: $e');
     }
   }
 }
