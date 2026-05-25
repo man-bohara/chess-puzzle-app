@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:confetti/confetti.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:square_bishop/square_bishop.dart';
 import 'package:squares/squares.dart';
 
+import '../../../core/sound/sound_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../application/puzzle_controller.dart';
 import '../data/puzzle_repository.dart';
@@ -31,18 +34,29 @@ class PuzzleSolverScreen extends ConsumerWidget {
         ),
         actions: [
           IconButton(
+            tooltip: 'Restart from Puzzle 1',
+            icon: const Icon(Icons.restart_alt),
+            onPressed: index == 0 ? null : () => context.go('/puzzle/0'),
+          ),
+          IconButton(
             tooltip: 'About',
             icon: const Icon(Icons.info_outline),
-            onPressed: () => showAboutDialog(
+            onPressed: () => showDialog<void>(
               context: context,
-              applicationName: 'Brain Games',
-              applicationVersion: '1.0.0',
-              applicationLegalese:
+              builder: (ctx) => AlertDialog(
+                title: const Text('Brain Games'),
+                content: const Text(
+                  'Brain Games by Bohara Inc.\n'
+                  'Version 1.0.0\n'
                   '© 2026 Bohara Inc. All rights reserved.',
-              children: const [
-                SizedBox(height: 12),
-                Text('Brain Games by Bohara Inc.'),
-              ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: const Text('Close'),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -139,19 +153,77 @@ class _PuzzleBoard extends ConsumerStatefulWidget {
   ConsumerState<_PuzzleBoard> createState() => _PuzzleBoardState();
 }
 
-class _PuzzleBoardState extends ConsumerState<_PuzzleBoard> {
+const _praiseWords = <String>[
+  'Excellent!',
+  'Fabulous!',
+  'Well Done!',
+  'Keep Going!',
+  'Great!',
+  'Brilliant!',
+  'Amazing!',
+  'Superb!',
+  'Bravo!',
+  'Fantastic!',
+];
+
+class _PuzzleBoardState extends ConsumerState<_PuzzleBoard>
+    with SingleTickerProviderStateMixin {
   late final ConfettiController _confetti;
+  late final AnimationController _praise;
+  late final Animation<double> _praiseScale;
+  late final Animation<double> _praiseOpacity;
+  final _rng = Random();
+  String? _praiseWord;
 
   @override
   void initState() {
     super.initState();
     _confetti = ConfettiController(duration: const Duration(seconds: 2));
+    _praise = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    )..addStatusListener((status) {
+        if (status == AnimationStatus.completed && mounted) {
+          setState(() => _praiseWord = null);
+        }
+      });
+    _praiseScale = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween(begin: 0.4, end: 1.15)
+            .chain(CurveTween(curve: Curves.easeOutBack)),
+        weight: 30,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: 1.15, end: 1.0)
+            .chain(CurveTween(curve: Curves.easeOut)),
+        weight: 15,
+      ),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 30),
+      TweenSequenceItem(
+        tween: Tween(begin: 1.0, end: 1.15)
+            .chain(CurveTween(curve: Curves.easeIn)),
+        weight: 25,
+      ),
+    ]).animate(_praise);
+    _praiseOpacity = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 15),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 60),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 25),
+    ]).animate(_praise);
   }
 
   @override
   void dispose() {
     _confetti.dispose();
+    _praise.dispose();
     super.dispose();
+  }
+
+  void _showPraise() {
+    setState(() {
+      _praiseWord = _praiseWords[_rng.nextInt(_praiseWords.length)];
+    });
+    _praise.forward(from: 0);
   }
 
   @override
@@ -161,9 +233,17 @@ class _PuzzleBoardState extends ConsumerState<_PuzzleBoard> {
     ref.listen<PuzzleAttemptState>(
       puzzleControllerProvider(puzzle),
       (prev, next) {
+        final prevIndex = prev?.moveIndex ?? 0;
         if (prev?.status != PuzzleStatus.solved &&
             next.status == PuzzleStatus.solved) {
           _confetti.play();
+          SoundService.instance.playSolved();
+          _showPraise();
+        } else if (next.moveIndex > prevIndex) {
+          SoundService.instance.playTick();
+        }
+        if (next.errors > (prev?.errors ?? 0)) {
+          SoundService.instance.playTick();
         }
       },
     );
@@ -236,6 +316,39 @@ class _PuzzleBoardState extends ConsumerState<_PuzzleBoard> {
                     ],
                   ),
                 ),
+                if (_praiseWord != null)
+                  IgnorePointer(
+                    child: AnimatedBuilder(
+                      animation: _praise,
+                      builder: (context, _) => Opacity(
+                        opacity: _praiseOpacity.value,
+                        child: Transform.scale(
+                          scale: _praiseScale.value,
+                          child: Text(
+                            _praiseWord!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 52,
+                              fontWeight: FontWeight.w900,
+                              color: AppTheme.woodDeep,
+                              letterSpacing: 1.5,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.white,
+                                  blurRadius: 12,
+                                ),
+                                Shadow(
+                                  color: Colors.black38,
+                                  offset: Offset(2, 3),
+                                  blurRadius: 6,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -259,9 +372,25 @@ class _PuzzleBoardState extends ConsumerState<_PuzzleBoard> {
             ),
           ],
           const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 12,
+            runSpacing: 8,
             children: [
+              OutlinedButton.icon(
+                onPressed: widget.index == 0
+                    ? null
+                    : () => context.go('/puzzle/${widget.index - 1}'),
+                icon: const Icon(Icons.arrow_back),
+                label: const Text('Previous'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppTheme.woodDeep,
+                  side: const BorderSide(
+                    color: AppTheme.woodAccent,
+                    width: 1.5,
+                  ),
+                ),
+              ),
               OutlinedButton.icon(
                 onPressed: () =>
                     ref.read(puzzleControllerProvider(puzzle).notifier).reset(),
@@ -275,8 +404,7 @@ class _PuzzleBoardState extends ConsumerState<_PuzzleBoard> {
                   ),
                 ),
               ),
-              if (solved) ...[
-                const SizedBox(width: 12),
+              if (solved)
                 FilledButton.icon(
                   onPressed: widget.isLast
                       ? null
@@ -287,7 +415,6 @@ class _PuzzleBoardState extends ConsumerState<_PuzzleBoard> {
                     backgroundColor: Colors.green.shade600,
                   ),
                 ),
-              ],
             ],
           ),
           const SizedBox(height: 24),
