@@ -12,17 +12,20 @@ class SoundService {
 
   final AudioPlayer _wrong = AudioPlayer()..setReleaseMode(ReleaseMode.stop);
   final AudioPlayer _solved = AudioPlayer()..setReleaseMode(ReleaseMode.stop);
+  final AudioPlayer _tick = AudioPlayer()..setReleaseMode(ReleaseMode.stop);
   bool _ready = false;
 
   Future<void> init() async {
     if (_ready) return;
     await _safeSet(_wrong, 'sounds/wrong.mp3');
     await _safeSet(_solved, 'sounds/solved.mp3');
+    await _safeSet(_tick, 'sounds/tick.mp3');
     _ready = true;
   }
 
   Future<void> playWrong() => _safePlay(_wrong);
   Future<void> playSolved() => _safePlay(_solved);
+  Future<void> playTick() => _safePlay(_tick);
 
   Future<void> _safeSet(AudioPlayer player, String assetPath) async {
     try {

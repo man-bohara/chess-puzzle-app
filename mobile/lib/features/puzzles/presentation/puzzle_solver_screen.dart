@@ -173,12 +173,15 @@ class _PuzzleBoardState extends ConsumerState<_PuzzleBoard> {
     ref.listen<PuzzleAttemptState>(
       puzzleControllerProvider(puzzle),
       (prev, next) {
+        final prevIndex = prev?.moveIndex ?? 0;
         if (prev?.status != PuzzleStatus.solved &&
             next.status == PuzzleStatus.solved) {
           _confetti.play();
           SoundService.instance.playSolved();
+        } else if (next.moveIndex > prevIndex) {
+          SoundService.instance.playTick();
         }
-        if (prev?.lastWasWrong != true && next.lastWasWrong) {
+        if (next.errors > (prev?.errors ?? 0)) {
           SoundService.instance.playWrong();
         }
       },
