@@ -182,7 +182,7 @@ class _PuzzleBoardState extends ConsumerState<_PuzzleBoard> {
           SoundService.instance.playTick();
         }
         if (next.errors > (prev?.errors ?? 0)) {
-          SoundService.instance.playWrong();
+          SoundService.instance.playTick();
         }
       },
     );
