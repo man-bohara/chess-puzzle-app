@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:square_bishop/square_bishop.dart';
 import 'package:squares/squares.dart';
 
+import '../../../core/sound/sound_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../application/puzzle_controller.dart';
 import '../data/puzzle_repository.dart';
@@ -175,6 +176,10 @@ class _PuzzleBoardState extends ConsumerState<_PuzzleBoard> {
         if (prev?.status != PuzzleStatus.solved &&
             next.status == PuzzleStatus.solved) {
           _confetti.play();
+          SoundService.instance.playSolved();
+        }
+        if (prev?.lastWasWrong != true && next.lastWasWrong) {
+          SoundService.instance.playWrong();
         }
       },
     );
