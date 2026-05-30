@@ -295,10 +295,38 @@ class _PuzzleBoardState extends ConsumerState<_PuzzleBoard>
     final squaresState = state.game.squaresState(orientation);
     final solved = state.status == PuzzleStatus.solved;
 
+    final alreadySolved = PuzzleProgressDb.instance.isSolved(puzzle.id);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(12),
       child: Column(
         children: [
+          if (alreadySolved) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.green.shade400),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.verified, color: Colors.green.shade700, size: 16),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Previously solved',
+                    style: TextStyle(
+                      color: Colors.green.shade800,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
           if (puzzle.caption != null) ...[
             Text(
               puzzle.caption!,

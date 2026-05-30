@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 
+import 'progress_store.dart';
+
 /// Per-puzzle progress: solved status, attempts, errors, points.
 ///
 /// On Android/iOS this is backed by SQLite. On web (dev only) it falls back
@@ -75,6 +77,8 @@ class PuzzleProgressDb {
     buf.writeln('Web mode: $kIsWeb');
     buf.writeln('DB open: ${_db != null}');
     buf.writeln('Cache size: ${_solvedCache.length}');
+    buf.writeln('Prefs saved index: ${ProgressStore.currentIndex}');
+    buf.writeln('Notifier index: ${ProgressStore.indexNotifier.value}');
     if (_lastError != null) buf.writeln('Last error: $_lastError');
     final db = _db;
     if (db == null) {
