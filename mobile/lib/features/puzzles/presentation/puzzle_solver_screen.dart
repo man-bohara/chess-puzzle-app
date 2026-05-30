@@ -55,19 +55,22 @@ class _PuzzleSolverScreenState extends ConsumerState<PuzzleSolverScreen> {
                 child: ValueListenableBuilder<int>(
                   valueListenable:
                       PuzzleProgressDb.instance.solvedCountNotifier,
-                  builder: (_, count, child) => Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.check_circle, size: 18),
-                      const SizedBox(width: 4),
-                      Text(
-                        '$count/$total',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
+                  builder: (_, count, child) => ValueListenableBuilder<int>(
+                    valueListenable: ProgressStore.indexNotifier,
+                    builder: (_, savedIdx, child2) => Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.check_circle, size: 18),
+                        const SizedBox(width: 4),
+                        Text(
+                          '$count/$total · #${savedIdx + 1}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
