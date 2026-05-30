@@ -2,12 +2,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/puzzles/presentation/puzzle_solver_screen.dart';
+import '../progress/progress_store.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
     redirect: (context, state) {
-      if (state.matchedLocation == '/') return '/puzzle/0';
+      if (state.matchedLocation == '/') {
+        return '/puzzle/${ProgressStore.currentIndex}';
+      }
       return null;
     },
     routes: [

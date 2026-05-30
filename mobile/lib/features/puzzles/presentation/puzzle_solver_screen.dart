@@ -7,18 +7,33 @@ import 'package:go_router/go_router.dart';
 import 'package:square_bishop/square_bishop.dart';
 import 'package:squares/squares.dart';
 
+import '../../../core/progress/progress_store.dart';
+import '../../../core/progress/puzzle_progress_db.dart';
 import '../../../core/sound/sound_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../application/puzzle_controller.dart';
 import '../data/puzzle_repository.dart';
 import '../domain/puzzle.dart';
 
-class PuzzleSolverScreen extends ConsumerWidget {
+class PuzzleSolverScreen extends ConsumerStatefulWidget {
   const PuzzleSolverScreen({required this.index, super.key});
   final int index;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PuzzleSolverScreen> createState() =>
+      _PuzzleSolverScreenState();
+}
+
+class _PuzzleSolverScreenState extends ConsumerState<PuzzleSolverScreen> {
+  @override
+  void initState() {
+    super.initState();
+    ProgressStore.setCurrentIndex(widget.index);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final index = widget.index;
     final puzzleAsync = ref.watch(puzzleByIndexProvider(index));
     final totalAsync = ref.watch(puzzleCountProvider);
     final total = totalAsync.valueOrNull ?? 0;
@@ -33,6 +48,30 @@ class PuzzleSolverScreen extends ConsumerWidget {
           ),
         ),
         actions: [
+          if (total > 0)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: ValueListenableBuilder<int>(
+                  valueListenable:
+                      PuzzleProgressDb.instance.solvedCountNotifier,
+                  builder: (_, count, child) => Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.check_circle, size: 18),
+                      const SizedBox(width: 4),
+                      Text(
+                        '$count/$total',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           IconButton(
             tooltip: 'Restart from Puzzle 1',
             icon: const Icon(Icons.restart_alt),
@@ -239,6 +278,10 @@ class _PuzzleBoardState extends ConsumerState<_PuzzleBoard>
           _confetti.play();
           SoundService.instance.playSolved();
           _showPraise();
+          PuzzleProgressDb.instance.markSolved(
+            puzzle.id,
+            errors: next.errors,
+          );
         } else if (next.moveIndex > prevIndex) {
           SoundService.instance.playTick();
         }
