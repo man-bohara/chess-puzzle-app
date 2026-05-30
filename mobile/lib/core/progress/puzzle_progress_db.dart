@@ -15,34 +15,48 @@ class PuzzleProgressDb {
   Database? _db;
   final Set<String> _solvedCache = {};
 
+  /// Reactive solved count — bind to it with `ValueListenableBuilder` to keep
+  /// progress indicators in sync with new solves.
+  final ValueNotifier<int> solvedCountNotifier = ValueNotifier<int>(0);
+
   Future<void> init() async {
-    if (kIsWeb) return;
-    final path = p.join(await getDatabasesPath(), 'progress.db');
-    _db = await openDatabase(
-      path,
-      version: 1,
-      onCreate: (db, _) async {
-        await db.execute('''
-          CREATE TABLE puzzle_progress (
-            puzzle_id  TEXT PRIMARY KEY,
-            solved     INTEGER NOT NULL DEFAULT 0,
-            solved_at  INTEGER,
-            attempts   INTEGER NOT NULL DEFAULT 0,
-            errors     INTEGER NOT NULL DEFAULT 0,
-            points     INTEGER NOT NULL DEFAULT 0,
-            updated_at INTEGER NOT NULL
-          )
-        ''');
-      },
-    );
-    final rows = await _db!.query(
-      'puzzle_progress',
-      columns: ['puzzle_id'],
-      where: 'solved = 1',
-    );
-    _solvedCache
-      ..clear()
-      ..addAll(rows.map((r) => r['puzzle_id'] as String));
+    try {
+      if (!kIsWeb) {
+        final path = p.join(await getDatabasesPath(), 'progress.db');
+        _db = await openDatabase(
+          path,
+          version: 1,
+          onCreate: (db, _) async {
+            await db.execute('''
+              CREATE TABLE puzzle_progress (
+                puzzle_id  TEXT PRIMARY KEY,
+                solved     INTEGER NOT NULL DEFAULT 0,
+                solved_at  INTEGER,
+                attempts   INTEGER NOT NULL DEFAULT 0,
+                errors     INTEGER NOT NULL DEFAULT 0,
+                points     INTEGER NOT NULL DEFAULT 0,
+                updated_at INTEGER NOT NULL
+              )
+            ''');
+          },
+        );
+        final rows = await _db!.query(
+          'puzzle_progress',
+          columns: ['puzzle_id'],
+          where: 'solved = 1',
+        );
+        _solvedCache
+          ..clear()
+          ..addAll(rows.map((r) => r['puzzle_id'] as String));
+        debugPrint(
+          'PuzzleProgressDb: loaded ${_solvedCache.length} solved puzzles '
+          'from $path',
+        );
+      }
+    } catch (e, st) {
+      debugPrint('PuzzleProgressDb.init failed: $e\n$st');
+    }
+    solvedCountNotifier.value = _solvedCache.length;
   }
 
   bool isSolved(String puzzleId) => _solvedCache.contains(puzzleId);
@@ -60,21 +74,36 @@ class PuzzleProgressDb {
     int errors = 0,
     int points = 0,
   }) async {
-    _solvedCache.add(puzzleId);
+    final wasNew = _solvedCache.add(puzzleId);
+    if (wasNew) solvedCountNotifier.value = _solvedCache.length;
     final db = _db;
     if (db == null) return;
-    final now = DateTime.now().millisecondsSinceEpoch;
-    await db.rawInsert('''
-      INSERT INTO puzzle_progress
-        (puzzle_id, solved, solved_at, attempts, errors, points, updated_at)
-      VALUES (?, 1, ?, 1, ?, ?, ?)
-      ON CONFLICT(puzzle_id) DO UPDATE SET
-        solved     = 1,
-        solved_at  = COALESCE(solved_at, excluded.solved_at),
-        attempts   = attempts + 1,
-        errors     = errors + excluded.errors,
-        points     = points + excluded.points,
-        updated_at = excluded.updated_at
-    ''', [puzzleId, now, errors, points, now]);
+    try {
+      final now = DateTime.now().millisecondsSinceEpoch;
+      await db.execute(
+        'INSERT OR IGNORE INTO puzzle_progress '
+        '(puzzle_id, updated_at) VALUES (?, ?)',
+        [puzzleId, now],
+      );
+      await db.execute(
+        '''
+        UPDATE puzzle_progress SET
+          solved     = 1,
+          solved_at  = COALESCE(solved_at, ?),
+          attempts   = attempts + 1,
+          errors     = errors + ?,
+          points     = points + ?,
+          updated_at = ?
+        WHERE puzzle_id = ?
+        ''',
+        [now, errors, points, now, puzzleId],
+      );
+      debugPrint(
+        'PuzzleProgressDb: marked $puzzleId solved '
+        '(total solved = ${_solvedCache.length})',
+      );
+    } catch (e, st) {
+      debugPrint('PuzzleProgressDb.markSolved($puzzleId) failed: $e\n$st');
+    }
   }
 }

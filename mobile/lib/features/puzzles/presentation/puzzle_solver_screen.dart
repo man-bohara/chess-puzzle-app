@@ -48,6 +48,30 @@ class _PuzzleSolverScreenState extends ConsumerState<PuzzleSolverScreen> {
           ),
         ),
         actions: [
+          if (total > 0)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: ValueListenableBuilder<int>(
+                  valueListenable:
+                      PuzzleProgressDb.instance.solvedCountNotifier,
+                  builder: (_, count, child) => Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.check_circle, size: 18),
+                      const SizedBox(width: 4),
+                      Text(
+                        '$count/$total',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           IconButton(
             tooltip: 'Restart from Puzzle 1',
             icon: const Icon(Icons.restart_alt),
