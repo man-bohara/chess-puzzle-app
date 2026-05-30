@@ -32,6 +32,14 @@ class _PuzzleSolverScreenState extends ConsumerState<PuzzleSolverScreen> {
   }
 
   @override
+  void didUpdateWidget(PuzzleSolverScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.index != widget.index) {
+      ProgressStore.setCurrentIndex(widget.index);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final index = widget.index;
     final puzzleAsync = ref.watch(puzzleByIndexProvider(index));
