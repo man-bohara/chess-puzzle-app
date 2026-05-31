@@ -63,22 +63,19 @@ class _PuzzleSolverScreenState extends ConsumerState<PuzzleSolverScreen> {
                 child: ValueListenableBuilder<int>(
                   valueListenable:
                       PuzzleProgressDb.instance.solvedCountNotifier,
-                  builder: (_, count, child) => ValueListenableBuilder<int>(
-                    valueListenable: ProgressStore.indexNotifier,
-                    builder: (_, savedIdx, child2) => Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.check_circle, size: 18),
-                        const SizedBox(width: 4),
-                        Text(
-                          '$count/$total · #${savedIdx + 1}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
+                  builder: (_, count, child) => Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.check_circle, size: 18),
+                      const SizedBox(width: 4),
+                      Text(
+                        '$count/$total',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -93,7 +90,20 @@ class _PuzzleSolverScreenState extends ConsumerState<PuzzleSolverScreen> {
             icon: const Icon(Icons.info_outline),
             onPressed: () => showDialog<void>(
               context: context,
-              builder: (_) => const _AboutDialog(),
+              builder: (ctx) => AlertDialog(
+                title: const Text('Brain Games'),
+                content: const Text(
+                  'Brain Games by Bohara Inc.\n'
+                  'Version 1.0.0\n'
+                  '© 2026 Bohara Inc. All rights reserved.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: const Text('Close'),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -502,97 +512,3 @@ class _PuzzleBoardState extends ConsumerState<_PuzzleBoard>
   }
 }
 
-class _AboutDialog extends StatefulWidget {
-  const _AboutDialog();
-
-  @override
-  State<_AboutDialog> createState() => _AboutDialogState();
-}
-
-class _AboutDialogState extends State<_AboutDialog> {
-  String? _report;
-  bool _running = false;
-
-  Future<void> _run() async {
-    setState(() => _running = true);
-    final r = await PuzzleProgressDb.instance.selfTest();
-    if (!mounted) return;
-    setState(() {
-      _report = r;
-      _running = false;
-    });
-  }
-
-  Future<void> _reset() async {
-    await PuzzleProgressDb.instance.resetAll();
-    await ProgressStore.setCurrentIndex(0);
-    if (!mounted) return;
-    setState(() {
-      _report = 'Progress reset. Restart the app to verify it stays at 0.';
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Brain Games'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Brain Games by Bohara Inc.\n'
-              'Version 1.0.0\n'
-              '© 2026 Bohara Inc. All rights reserved.',
-            ),
-            const Divider(height: 24),
-            const Text(
-              'Persistence diagnostics',
-              style: TextStyle(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(height: 6),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                FilledButton.tonal(
-                  onPressed: _running ? null : _run,
-                  child: const Text('Run DB self-test'),
-                ),
-                OutlinedButton(
-                  onPressed: _running ? null : _reset,
-                  child: const Text('Reset all progress'),
-                ),
-              ],
-            ),
-            if (_report != null) ...[
-              const SizedBox(height: 12),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.black12,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: SelectableText(
-                  _report!,
-                  style: const TextStyle(
-                    fontFamily: 'monospace',
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Close'),
-        ),
-      ],
-    );
-  }
-}
