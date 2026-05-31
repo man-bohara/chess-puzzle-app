@@ -1,6 +1,7 @@
 import 'package:bishop/bishop.dart' as bishop;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/progress/puzzle_progress_db.dart';
 import '../domain/puzzle.dart';
 
 class PuzzleAttemptState {
@@ -49,21 +50,35 @@ class PuzzleAttemptState {
 enum PuzzleStatus { inProgress, solved }
 
 class PuzzleController extends StateNotifier<PuzzleAttemptState> {
-  PuzzleController(Puzzle puzzle)
-      : super(PuzzleAttemptState(
-          puzzle: puzzle,
-          game: bishop.Game(fen: puzzle.fen),
-          moveIndex: 0,
-          status: PuzzleStatus.inProgress,
-        ));
+  PuzzleController(Puzzle puzzle, {bool startSolved = false})
+      : super(_buildState(puzzle, startSolved: startSolved));
 
-  void reset() {
-    state = PuzzleAttemptState(
-      puzzle: state.puzzle,
-      game: bishop.Game(fen: state.puzzle.fen),
+  static PuzzleAttemptState _buildState(
+    Puzzle puzzle, {
+    required bool startSolved,
+  }) {
+    final game = bishop.Game(fen: puzzle.fen);
+    if (startSolved) {
+      for (final move in puzzle.solution) {
+        game.makeMoveString(move);
+      }
+      return PuzzleAttemptState(
+        puzzle: puzzle,
+        game: game,
+        moveIndex: puzzle.solution.length,
+        status: PuzzleStatus.solved,
+      );
+    }
+    return PuzzleAttemptState(
+      puzzle: puzzle,
+      game: game,
       moveIndex: 0,
       status: PuzzleStatus.inProgress,
     );
+  }
+
+  void reset() {
+    state = _buildState(state.puzzle, startSolved: false);
   }
 
   /// Attempt the next user move. Returns true if it matched the expected solution move.
@@ -101,5 +116,8 @@ class PuzzleController extends StateNotifier<PuzzleAttemptState> {
 
 final puzzleControllerProvider = StateNotifierProvider.family<
     PuzzleController, PuzzleAttemptState, Puzzle>(
-  (ref, puzzle) => PuzzleController(puzzle),
+  (ref, puzzle) => PuzzleController(
+    puzzle,
+    startSolved: PuzzleProgressDb.instance.isSolved(puzzle.id),
+  ),
 );
